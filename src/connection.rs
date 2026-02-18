@@ -122,6 +122,10 @@ fn process_message(msg: &str, addr: &SocketAddr, device_map: &DevicesMap, peer_m
             log = format!("ListUsersResponse");
             log.clone()
         },
+        Ok(DeveceMessage::Echo(text)) => {
+            log = format!("[ECHO]: {}", text);
+            serde_json::to_string(&DeviceMessage::Echo(text)).unwrap()
+        },
         Ok(_) => {
             log = format!("Unknown command");
             serde_json::to_string(&DeviceMessage::Unknown).unwrap()

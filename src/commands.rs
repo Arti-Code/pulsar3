@@ -12,6 +12,7 @@ pub enum DeviceMessage {
     ListUsersRequest,
     ListUsersResponse(String),
     Registered(RegisterData),
+    Echo(String),
     Unknown,
 }
 
