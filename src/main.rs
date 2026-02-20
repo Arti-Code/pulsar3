@@ -8,21 +8,14 @@ use std::{
     collections::HashMap,
     env,
     io::Error as IoError,
-    sync::{Arc, Mutex},
+    sync::Mutex,
 };
-use std::net::SocketAddr;
 use anyhow::Error;
-use futures_channel::mpsc::UnboundedSender;
-use tokio_tungstenite::tungstenite::Message;
 use tokio::net::TcpListener;
 use colored::*;
-use crate::connection::handle_connection;
+use crate::{connection::handle_connection, device::{DevicesMap, PeerMap}};
 use crate::device::Devices;
 
-
-pub type Tx = UnboundedSender<Message>;
-pub type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
-pub type DevicesMap = Arc<Mutex<Devices>>;
 
 #[tokio::main]
 async fn main() -> Result<(), IoError> {
@@ -47,7 +40,7 @@ async fn init_display() {
     let author = env!("CARGO_PKG_AUTHORS");
     let descr = env!("CARGO_PKG_DESCRIPTION");
     println!("");
-    println!("{}", "-=PULSAR 2 SERVER=-".bold().red().underline());
+    println!("{}", "-=PULSAR SIGNALING SERVER=-".bold().red().underline());
     println!("");
     println!("ver: {}", ver);
     println!("{}", author);
