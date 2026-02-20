@@ -1,6 +1,17 @@
 
-use std::{collections::HashMap, net::SocketAddr};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc};
+use futures_channel::mpsc::UnboundedSender;
+use std::sync::Mutex;
+use tokio_tungstenite::tungstenite::Message;
+
 use crate::sdp::*;
+
+pub type Tx = UnboundedSender<Message>;
+pub type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
+pub type DevicesMap = Arc<Mutex<Devices>>;
+
+
+
 pub struct Device {
     pub addr: SocketAddr,
     pub offer: Option<SessionDescription>,

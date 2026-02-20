@@ -5,9 +5,8 @@ use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
 use serde_json;
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::Message;
-use crate::device::*;
-use crate::{DevicesMap, PeerMap};
-use crate::commands::*;
+
+use crate::{commands::{DeviceMessage, RegisterData}, device::{Device, DevicesMap, PeerMap}};
 
 
 
@@ -19,12 +18,22 @@ pub async fn handle_connection(peer_map: PeerMap, device_map: DevicesMap, raw_st
     peer_map.lock().unwrap().insert(addr, tx);
     let (outgoing, incoming) = ws_stream.split();
     let broadcast_incoming = incoming.try_for_each(|msg| {
-        match msg.to_text() {
-            Ok(text) => process_message(text, &addr, &device_map, &peer_map),
-            Err(e) => {
-                println!("error processing message from {}: {}", addr, e);
-                return future::ok(());
-            }
+        match msg {
+            Message::Text(msg) => {
+                //let msg = msg.as_str().to_string();
+                process_message(msg.as_str(), &addr, &device_map, &peer_map);
+            },
+            Message::Binary(_) => {},
+            Message::Ping(_) => {},
+            Message::Pong(_) => {},
+            Message::Close(_) => {
+                let mut devices = device_map.lock().unwrap();
+                devices.list.retain(|_, device| device.addr != addr);
+                peer_map.lock().unwrap().remove(&addr);
+                println!("{} disconnected", &addr);
+                //return future::ok(());
+            },
+            Message::Frame(_) => {},
         }
         future::ok(())
     });
@@ -95,24 +104,24 @@ fn process_message(msg: &str, addr: &SocketAddr, device_map: &DevicesMap, peer_m
         Ok(DeviceMessage::ListUsersRequest) => {
             let mut resp = String::new();
             let devices = device_map.lock().unwrap();
-            for (name, device) in devices.list.iter() {
-                let offer = match device.offer {
-                    None => "offer: --".to_string(),
-                    Some(ref offer) => format!("offer: {}", offer.description),
-                };
-                let answer = match device.answer {
-                    None => "answer: --".to_string(),
-                    Some(ref answer) => format!("answer: {}", answer.description),
-                };
+            for (name, _) in devices.list.iter() {
+                //let offer = match device.offer {
+                //    None => "offer: --".to_string(),
+                //    Some(ref offer) => format!("offer: {}", offer.description),
+                //};
+                //let answer = match device.answer {
+                //    None => "answer: --".to_string(),
+                //    Some(ref answer) => format!("answer: {}", answer.description),
+                //};
                 /* let d = match device.offer {
                     None => format!("[{}]: offer: --", *name),
                     Some(ref offer) => format!("[{}]: offer: {}", *name, offer.description()),
                 }; */
                 resp.push_str(name.to_uppercase().as_str());
-                resp.push_str(": ");
-                resp.push_str(&offer);
-                resp.push_str(" | ");
-                resp.push_str(&answer);
+                //resp.push_str(": ");
+                //resp.push_str(&offer);
+                //resp.push_str(" | ");
+                //resp.push_str(&answer);
                 resp.push('\n');
             }
             log = resp.clone();
